@@ -10,11 +10,17 @@
   <div id="app">
     <header id="titlebar">
       <div class="brand">剪切板</div>
-      <label class="top-check" title="插件打开时自动记录剪贴板">
-        <input id="opt-monitor" type="checkbox" checked />
-        <span>记录中</span>
-      </label>
-      <button id="btn-clear-history" class="icon-btn danger" title="清空历史">清空</button>
+      <div id="theme-switch" class="theme-switch" role="group" aria-label="主题">
+        <button type="button" class="theme-btn" data-theme="light" title="浅色主题" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.6v2.2M12 19.2v2.2M4.5 4.5l1.6 1.6M17.9 17.9l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.5 19.5l1.6-1.6M17.9 6.1l1.6-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" class="theme-btn" data-theme="dark" title="深色主题" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 14.4A8.2 8.2 0 0 1 9.6 4a8.4 8.4 0 1 0 10.4 10.4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="theme-btn" data-theme="system" title="跟随系统主题" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 20h7M12 16.5V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
     </header>
 
     <main id="panels">

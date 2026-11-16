@@ -2,7 +2,7 @@
  * 剪切板插件 UI 逻辑
  * - 打开后在前台轮询系统剪贴板，记录文本/图片历史
  * - 历史与常用文字持久化到本地 JSON（preload.services）
- * - 支持搜索、分组、复制回剪贴板、删除/清空
+ * - 支持搜索、分组、复制回剪贴板、删除，并可切换浅色/深色/跟随系统主题
  */
 (function () {
   "use strict";
@@ -14,7 +14,6 @@
   var state = core ? core.normalizeState(null) : { history: [], snippets: [], groups: [{ id: "g-default", name: "默认", ts: 0 }], settings: { maxHistory: 500, maxImages: 12, keepImages: false } };
   var currentGroup = "g-default";
   var query = "";
-  var monitor = true;
   var editingId = null;
   var lastSig = "";
   var pollTimer = null;
@@ -31,6 +30,48 @@
     el.toast.className = "show";
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { el.toast.className = ""; }, 1400);
+  }
+
+  var THEME_KEY = "clipboard-theme";
+  var currentTheme = "system";
+
+  function preferredDark() {
+    try { return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); } catch (_) { return false; }
+  }
+
+  function resolveTheme(theme) {
+    if (theme === "light" || theme === "dark") return theme;
+    return preferredDark() ? "dark" : "light";
+  }
+
+  function paintTheme(theme) {
+    document.documentElement.setAttribute("data-theme", resolveTheme(theme));
+    var buttons = document.querySelectorAll(".theme-btn");
+    for (var i = 0; i < buttons.length; i++) {
+      var b = buttons[i];
+      var on = b.getAttribute("data-theme") === theme;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+  }
+
+  function applyTheme(theme) {
+    currentTheme = theme === "light" || theme === "dark" ? theme : "system";
+    try { localStorage.setItem(THEME_KEY, currentTheme); } catch (_) {}
+    paintTheme(currentTheme);
+  }
+
+  function initTheme() {
+    var saved = "system";
+    try { saved = localStorage.getItem(THEME_KEY) || "system"; } catch (_) {}
+    currentTheme = saved === "light" || saved === "dark" ? saved : "system";
+    paintTheme(currentTheme);
+    try {
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
+      var onChange = function () { if (currentTheme === "system") paintTheme(currentTheme); };
+      if (mq.addEventListener) mq.addEventListener("change", onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    } catch (_) {}
   }
 
   function loadState() {
@@ -146,8 +187,7 @@
 
   function textSig(text) { return "t:" + String(text || "").length + ":" + String(text || "").slice(0, 200); }
 
-  function captureClipboard(force) {
-    if (!monitor && !force) return;
+  function captureClipboard() {
     if (!services.readClipboard || !core) return;
     var res = services.readClipboard();
     if (!res || !res.ok) return;
@@ -555,15 +595,12 @@
   }
 
   function bindEvents() {
-    el.optMonitor.addEventListener("change", function () {
-      monitor = !!el.optMonitor.checked;
-      toast(monitor ? "已开始记录剪贴板" : "已暂停记录");
-      if (monitor) captureClipboard(true);
-    });
-    el.btnClearHistory.addEventListener("click", function () {
-      state = core.clearHistory(state);
-      saveState(); render(); toast("历史已清空");
-    });
+    var themeBtns = document.querySelectorAll(".theme-btn");
+    for (var i = 0; i < themeBtns.length; i++) {
+      (function (btn) {
+        btn.addEventListener("click", function () { applyTheme(btn.getAttribute("data-theme")); });
+      })(themeBtns[i]);
+    }
     el.btnAddSnippet.addEventListener("click", function () { openEditor(null); });
     el.editorClose.addEventListener("click", closeEditor);
     el.editorCancel.addEventListener("click", closeEditor);
@@ -625,8 +662,6 @@
 
   function boot() {
     el.titlebar = $("titlebar");
-    el.optMonitor = $("opt-monitor");
-    el.btnClearHistory = $("btn-clear-history");
     el.panels = $("panels");
     el.left = $("left");
     el.right = $("right");
@@ -656,6 +691,7 @@
       toast("剪贴板能力不可用（请在 ZTools 插件环境中运行）");
     }
 
+    initTheme();
     loadState();
     render();
     bindEvents();
