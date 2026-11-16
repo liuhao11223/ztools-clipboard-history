@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>剪切板</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="titlebar">
+      <div class="brand">剪切板</div>
+      <label class="top-check" title="插件打开时自动记录剪贴板">
+        <input id="opt-monitor" type="checkbox" checked />
+        <span>记录中</span>
+      </label>
+      <button id="btn-clear-history" class="icon-btn danger" title="清空历史">清空</button>
+    </header>
+
+    <main id="panels">
+      <section id="left">
+        <div class="panel-head"><span>历史</span><span id="history-count" class="muted"></span></div>
+        <div id="history-list" class="list"></div>
+      </section>
+      <div id="splitter" title="拖拽调整宽度"></div>
+      <aside id="right">
+        <div class="panel-head"><span>常用</span></div>
+        <div id="group-chips" class="chips"></div>
+        <div id="snippet-list" class="list"></div>
+        <button id="btn-add-snippet" class="add-btn">＋ 添加常用文字</button>
+      </aside>
+    </main>
+
+    <footer id="preview"><div id="preview-content">悬浮任意记录显示预览</div></footer>
+
+    <div id="snippet-editor" class="hidden">
+      <div class="editor-panel">
+        <div class="editor-head">
+          <span id="editor-title">添加常用文字</span>
+          <button id="editor-close" class="icon-btn" title="关闭">✕</button>
+        </div>
+        <div class="editor-body">
+          <label class="row"><span>分组</span><select id="editor-group"></select></label>
+          <label class="row"><span>标签</span><input id="editor-tag" type="text" placeholder="如：邮箱 / 地址" spellcheck="false" /></label>
+          <label class="col"><span>内容</span><textarea id="editor-text" placeholder="输入常用文字内容..."></textarea></label>
+          <div class="row actions"><button id="editor-cancel" class="btn">取消</button><button id="editor-save" class="btn primary">保存</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+  </div>
+  <script src="lib/core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
