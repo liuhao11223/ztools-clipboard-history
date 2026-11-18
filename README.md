@@ -24,6 +24,7 @@
 - [lib/core.js](lib/core.js) — 纯逻辑（UMD，Node/浏览器共用，便于测试）
 - [scripts/make-logo.js](scripts/make-logo.js) — 生成 [logo.png](logo.png)
 - [test/core.test.js](test/core.test.js) — 核心逻辑单元测试
+- [packages/](packages/) — 打包好的安装包（`.zpx` 官方安装包 / `.asar` 包体）
 
 ## 开发
 
@@ -35,6 +36,21 @@ npm run logo   # 生成 logo.png
 ```
 
 ## 在 ZTools 中安装/使用
+
+### 方式一：官方安装包（推荐）
+
+`packages/` 内提供打包好的安装包：
+
+- [`packages/clipboard-history-1.0.2.zpx`](packages/clipboard-history-1.0.2.zpx) — ZTools 官方安装包（asar + brotli 压缩，双击或导入即可安装）
+- [`packages/clipboard-history-1.0.2.asar`](packages/clipboard-history-1.0.2.asar) — 未压缩的 asar 包体（手动放入插件目录用）
+
+1. 下载并双击 `packages/clipboard-history-1.0.2.zpx`，或在 ZTools 插件页选择「导入本地插件」指向该文件。
+2. 在弹出的安装页点击「安装」。
+3. 打开插件：在 ZTools 输入 `剪切板` / `剪切板历史` / `clipboard` / `clipboard history`。
+4. 插件内过滤：进入插件后直接在 ZTools 主/子搜索框输入关键词。
+5. 主搜索直达：在 ZTools 主搜索框直接输入关键词，匹配并选择“剪切板历史”结果进行复制/粘贴。
+
+### 方式二：源码目录安装（本地开发）
 
 1. 确保插件目录包含 `plugin.json`、`index.html`、`preload.js`、`logo.png` 等文件。
 2. 按 ZTools 本地开发插件方式安装并注册本目录（可将目录 junction 到 `~/.ztools/plugins-dev/<name>` 并在 `~/.ztools/lmdb/device` 的 `ZTOOLS/plugins` 中登记；安装/注册后重启或重新加载 ZTools）。
