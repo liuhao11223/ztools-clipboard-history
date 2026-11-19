@@ -11,7 +11,7 @@
   - 历史项支持删除；插件打开即自动记录，无手动开关。
 - **主题**：标题栏右侧可切换 **浅色 / 深色 / 跟随系统** 主题（图标按钮，选择会记住）。
 - **常用文字（Snippets）**：按分组管理常用文本，支持新增、编辑、删除、分组切换；分组支持新增、双击重命名，鼠标悬停分组名显示删除图标（默认分组除外）。
-- **同步到 ZTools「我的数据」**：常用文字会同步写入插件数据库 `ztools.db`（文档前缀 `snippet/`，`type: "clipboard-snippet"`），在插件打开/加载及收藏或分组变更保存后自动同步，便于在 ZTools「我的数据」中查看与管理；已删除收藏会从数据库中移除。
+- **同步到 ZTools「我的数据」**：常用文字会同步写入插件数据库 `ztools.db`（文档前缀 `snippet/`，`type: "clipboard-snippet"`），在插件打开/加载及收藏或分组变更保存后自动同步，便于在 ZTools「我的数据」中查看与管理。本地 JSON 与数据库记录冲突时**以时间戳最新的记录为准**：数据库中更新的记录会回填到本地，本地更新的记录覆盖数据库，本地删除记录写入删除标记并从数据库移除。
 - **本地持久化**：历史/收藏/分组/设置保存为本地 JSON。
 
 > 适配说明：为适配 ZTools 插件能力边界，本插件未包含原参考项目中的全局热键唤起、跨窗口自动粘贴辅助程序（focus-watcher/ui-helper）、GitHub 同步、托盘等 Electron 主进程能力。插件界面内实时采集在**打开期间**进行；主搜索框结果基于**已保存**的本地历史记录（需先打开过插件并完成采集/保存）。
@@ -64,7 +64,8 @@ npm run logo   # 生成 logo.png
 
 - **本地 JSON**：`$ZTOOLS_DATA_ROOT/clipboard-history-plugin.json` 或 `~/.ztools/clipboard-history-plugin.json`
   - 结构：`{ history, snippets, groups, settings }`（由 `lib/core.js` 的 `normalizeState` 规范化）
-- **ZTools「我的数据」**：常用文字同步为 `ztools.db` 文档（`_id: "snippet/<id>"`, `type: "clipboard-snippet"`，含标题/文本/标签/分组/时间等字段）
+- **ZTools「我的数据」**：常用文字同步为 `ztools.db` 文档（`_id: "snippet/<id>"`, `type: "clipboard-snippet"`，含标题/文本/标签/分组/时间等字段）；冲突由 `lib/core.js` 的 `resolveSyncConflict` 按 `updatedAt/createdAt/ts` 取最新记录，本地删除以 `settings.deleted` 删除标记参与判定
+- **同步机制**：`app.js` 打开/保存后触发同步，先比对本地与库记录，再按最新记录合并并写库；删除标记（`settings.deleted`）不会随普通保存丢失
 
 ## 参考
 

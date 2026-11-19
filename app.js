@@ -93,85 +93,66 @@
   var lastSyncedSnippetIds = null;
   var snippetSyncQueue = Promise.resolve();
 
-  function groupNameById(st, id) {
-    var groups = (st && st.groups) || [];
-    for (var i = 0; i < groups.length; i++) {
-      var g = groups[i];
-      if (g && g.id === id) return String(g.name || "默认");
+  function toArray(res) {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.rows)) return res.rows.map(function (r) { return r && (r.doc || r.value || r) || r; }).filter(Boolean);
+    if (Array.isArray(res.docs)) return res.docs;
+    return [];
+  }
+
+  function syncStateChanged(a, b) {
+    return JSON.stringify(a && a.snippets) !== JSON.stringify(b && b.snippets) ||
+      JSON.stringify((a && a.settings && a.settings.deleted) || {}) !== JSON.stringify((b && b.settings && b.settings.deleted) || {});
+  }
+
+  function putDoc(db, doc, id) {
+    return Promise.resolve().then(function () { return db.put(doc); }).catch(function () {
+      return Promise.resolve(db.get ? db.get(id) : null).then(function (cur) {
+        var next = Object.assign({}, doc);
+        if (cur && cur._rev) next._rev = cur._rev;
+        return db.put(next);
+      }).catch(function () {});
+    });
+  }
+
+  function removeDoc(db, doc, id) {
+    if (doc && doc._rev) {
+      return Promise.resolve().then(function () { return db.remove(doc); }).catch(function () {});
     }
-    return "默认";
+    return Promise.resolve(db.get ? db.get(id) : null).then(function (cur) {
+      if (cur && cur._rev) return db.remove(cur);
+      return db.remove(id);
+    }).catch(function () {});
   }
 
-  function snippetDocId(id) { return "snippet/" + String(id || ""); }
-
-  function buildSnippetDoc(st, s) {
-    var textVal = String((s && s.text) || "");
-    var tag = String((s && s.tag) || "").trim();
-    var title = tag ? ("[" + tag + "] " + textVal) : textVal;
-    if (title.length > 80) title = title.slice(0, 80) + "…";
-    return {
-      _id: snippetDocId(s && s.id),
-      type: "clipboard-snippet",
-      title: title || "常用文字",
-      text: textVal,
-      tag: tag,
-      groupId: String((s && s.groupId) || "g-default"),
-      groupName: groupNameById(st, s && s.groupId),
-      createdAt: (s && s.ts) || 0,
-      updatedAt: (s && (s.updatedAt || s.ts)) || 0,
-      source: "clipboard-history"
-    };
-  }
-
+  /**
+   * 把常用文字同步到 ZTools「我的数据」。
+   * 本地 JSON 与库中记录冲突时，统一由 core.resolveSyncConflict 按最新时间戳取最新记录，
+   * 库中更新的记录会回填到本地，本地删除的记录会写入删除标记并从库中移除。
+   */
   function syncSnippetsToMyData(snapshot) {
     var db = getZDb();
-    if (!db || !db.allDocs || !db.put || !db.remove) return Promise.resolve();
+    if (!db || !db.allDocs || !db.put || !db.remove || !core || !core.resolveSyncConflict) return Promise.resolve();
     var st = snapshot || state;
-    var snippets = Array.isArray(st && st.snippets) ? st.snippets : [];
-    var desired = {};
-    snippets.forEach(function (s) { if (s && s.id) desired[snippetDocId(s.id)] = buildSnippetDoc(st, s); });
-    var desiredIds = Object.keys(desired);
-
-    function toArray(res) {
-      if (!res) return [];
-      if (Array.isArray(res)) return res;
-      if (Array.isArray(res.rows)) return res.rows.map(function (r) { return r && (r.doc || r.value || r) || r; }).filter(Boolean);
-      if (Array.isArray(res.docs)) return res.docs;
-      return [];
-    }
 
     return Promise.resolve().then(function () {
       return db.allDocs("snippet/");
     }).then(function (res) {
-      var existing = toArray(res);
-      var existingById = {};
-      existing.forEach(function (d) { if (d && d._id) existingById[String(d._id)] = d; });
-      var ops = [];
-      desiredIds.forEach(function (id) {
-        var doc = desired[id];
-        var ex = existingById[id];
-        if (ex && ex._rev) doc._rev = ex._rev;
-        ops.push(Promise.resolve().then(function () { return db.put(doc); }).catch(function () {
-          try {
-            return Promise.resolve(db.get ? db.get(id) : null).then(function (cur) {
-              if (cur && cur._rev) doc._rev = cur._rev;
-              return db.put(doc);
-            });
-          } catch (_) {}
-        }));
-      });
-      existing.forEach(function (d) {
-        if (!d || !d._id) return;
-        var id = String(d._id);
-        if (desired[id]) return;
-        ops.push(Promise.resolve().then(function () {
-          if (d._rev) return db.remove(d);
-          return db.remove(id);
-        }).catch(function () {}));
+      var merged = core.resolveSyncConflict(st, toArray(res));
+      if (syncStateChanged(st, merged.state)) {
+        state = merged.state;
+        if (services.save) services.save(state);
+        render();
+      }
+      lastSyncedSnippetIds = merged.state.snippets.map(function (s) { return s.id; });
+
+      var ops = merged.dbOps.map(function (op) {
+        if (!op || !op.op) return Promise.resolve();
+        if (op.op === "remove") return removeDoc(db, op.doc, op.id);
+        return putDoc(db, op.doc, op.id);
       });
       return Promise.all(ops);
-    }).then(function () {
-      lastSyncedSnippetIds = desiredIds;
     }).catch(function () {});
   }
 

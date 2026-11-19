@@ -1,6 +1,6 @@
 {
   "name": "clipboard-plugin",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "ZTools 剪贴板历史与常用文字插件：本地历史记录、主搜索框(mainPush)检索、分组收藏与同步到「我的数据」",
   "license": "MIT",

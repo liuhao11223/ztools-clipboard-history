@@ -137,3 +137,62 @@ test("filterHistory/filterSnippets: 搜索与分组过滤", () => {
   assert.equal(core.filterSnippets(s, g.id, "").length, 1);
   assert.equal(core.filterSnippets(s, "g-default", "beta").length, 1);
 });
+
+test("snippets: 删除写入删除标记，normalizeState 保留标记", () => {
+  let s = core.normalizeState(null);
+  s = core.addSnippet(s, "g-default", "a", "alpha", 1);
+  const id = s.snippets[0].id;
+  s = core.deleteSnippet(s, id, 5);
+  assert.equal(s.snippets.length, 0);
+  assert.equal(s.settings.deleted[id], 5);
+  const kept = core.normalizeState(s);
+  assert.equal(kept.settings.deleted[id], 5);
+  assert.deepEqual(core.normalizeState({ settings: { deleted: { x: -1, y: "bad" } } }).settings.deleted, {});
+});
+
+test("resolveSyncConflict: 冲突时以最新记录为准", () => {
+  let local = core.normalizeState(null);
+  local = core.addSnippet(local, "g-default", "a", "本地A", 10);
+  local = core.addSnippet(local, "g-default", "b", "本地B", 20);
+  const id1 = local.snippets.find((s) => s.text === "本地A").id;
+  const id2 = local.snippets.find((s) => s.text === "本地B").id;
+
+  const dbDocs = [
+    { _id: "snippet/" + id1, _rev: "r1", text: "库A", groupId: "g-default", tag: "a", updatedAt: 30, createdAt: 10 },
+    { _id: "snippet/id-only", _rev: "r2", text: "仅库", groupId: "g-default", tag: "", updatedAt: 40, createdAt: 40 },
+    { _id: "snippet/id-del", _rev: "r3", text: "待删", groupId: "g-default", tag: "", updatedAt: 5, createdAt: 5 }
+  ];
+  local = core.deleteSnippet(local, "id-del", 50);
+
+  const res = core.resolveSyncConflict(local, dbDocs);
+
+  // 库中更新的记录回填到本地
+  const a = res.state.snippets.find((s) => s.id === id1);
+  assert.equal(a.text, "库A");
+  assert.equal(a.updatedAt, 30);
+
+  // 本地更新的记录以本地为准
+  const b = res.state.snippets.find((s) => s.id === id2);
+  assert.equal(b.text, "本地B");
+
+  // 仅库中存在的记录被回填
+  const only = res.state.snippets.find((s) => s.id === "id-only");
+  assert.equal(only.text, "仅库");
+
+  // 本地删除标记比库记录更新 -> 从库移除
+  const delOp = res.dbOps.find((o) => o.op === "remove" && o.id === "snippet/id-del");
+  assert.equal(!!delOp, true);
+  assert.equal(delOp.doc._rev, "r3");
+  assert.equal(res.state.settings.deleted["id-del"], 50);
+
+  // 本地更新项生成不带 _rev 的 put；库更新项保留原 _rev
+  const localOp = res.dbOps.find((o) => o.op === "put" && o.id === "snippet/" + id2);
+  assert.equal(localOp.doc._rev, undefined);
+  assert.equal(localOp.doc.text, "本地B");
+  const dbOp = res.dbOps.find((o) => o.op === "put" && o.id === "snippet/" + id1);
+  assert.equal(dbOp.doc._rev, "r1");
+
+  // 时间戳相等时保留本地
+  const res2 = core.resolveSyncConflict(local, [{ _id: "snippet/" + id2, text: "同", updatedAt: 20 }]);
+  assert.equal(res2.state.snippets.find((s) => s.id === id2).text, "本地B");
+});
