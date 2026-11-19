@@ -153,7 +153,9 @@
         return putDoc(db, op.doc, op.id);
       });
       return Promise.all(ops);
-    }).catch(function () {});
+    }).catch(function (err) {
+      try { console.warn("[clipboard-sync] sync failed", err); } catch (_) {}
+    });
   }
 
   function scheduleSnippetSync() {

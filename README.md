@@ -43,11 +43,11 @@ npm run package # 生成 packages/ 下的 .asar 与 .zpx（.zpx = asar + brotli 
 
 `packages/` 内提供打包好的安装包：
 
-- [`packages/clipboard-history-1.0.3.zpx`](packages/clipboard-history-1.0.3.zpx) — ZTools 官方安装包（asar + brotli 压缩，双击或导入即可安装）
-- [`packages/clipboard-history-1.0.3.asar`](packages/clipboard-history-1.0.3.asar) — 未压缩的 asar 包体（手动放入插件目录用）
-- 历史版本：[`packages/clipboard-history-1.0.2.zpx`](packages/clipboard-history-1.0.2.zpx) / [`packages/clipboard-history-1.0.2.asar`](packages/clipboard-history-1.0.2.asar)
+- [`packages/clipboard-history-1.0.4.zpx`](packages/clipboard-history-1.0.4.zpx) — ZTools 官方安装包（asar + brotli 压缩，双击或导入即可安装）
+- [`packages/clipboard-history-1.0.4.asar`](packages/clipboard-history-1.0.4.asar) — 未压缩的 asar 包体（手动放入插件目录用）
+- 历史版本：[`packages/clipboard-history-1.0.3.zpx`](packages/clipboard-history-1.0.3.zpx) / [`packages/clipboard-history-1.0.3.asar`](packages/clipboard-history-1.0.3.asar)、[`packages/clipboard-history-1.0.2.zpx`](packages/clipboard-history-1.0.2.zpx) / [`packages/clipboard-history-1.0.2.asar`](packages/clipboard-history-1.0.2.asar)
 
-1. 下载并双击 `packages/clipboard-history-1.0.3.zpx`，或在 ZTools 插件页选择「导入本地插件」指向该文件。
+1. 下载并双击 `packages/clipboard-history-1.0.4.zpx`，或在 ZTools 插件页选择「导入本地插件」指向该文件。
 2. 在弹出的安装页点击「安装」。
 3. 打开插件：在 ZTools 输入 `剪切板` / `剪切板历史` / `clipboard` / `clipboard history`。
 4. 插件内过滤：进入插件后直接在 ZTools 主/子搜索框输入关键词。
