@@ -24,15 +24,17 @@
 - [lib/core.js](lib/core.js) — 纯逻辑（UMD，Node/浏览器共用，便于测试）
 - [scripts/make-logo.js](scripts/make-logo.js) — 生成 [logo.png](logo.png)
 - [test/core.test.js](test/core.test.js) — 核心逻辑单元测试
+- [scripts/make-package.js](scripts/make-package.js) — 打包脚本（生成 `.asar` 与 `.zpx` 安装包）
 - [packages/](packages/) — 打包好的安装包（`.zpx` 官方安装包 / `.asar` 包体）
 
 ## 开发
 
-环境：Node.js（用于测试与生成图标）。
+环境：Node.js（用于测试、生成图标与打包）。
 
 ```bash
 npm test       # node --test test/core.test.js
 npm run logo   # 生成 logo.png
+npm run package # 生成 packages/ 下的 .asar 与 .zpx（.zpx = asar + brotli 压缩）
 ```
 
 ## 在 ZTools 中安装/使用
@@ -41,10 +43,11 @@ npm run logo   # 生成 logo.png
 
 `packages/` 内提供打包好的安装包：
 
-- [`packages/clipboard-history-1.0.2.zpx`](packages/clipboard-history-1.0.2.zpx) — ZTools 官方安装包（asar + brotli 压缩，双击或导入即可安装）
-- [`packages/clipboard-history-1.0.2.asar`](packages/clipboard-history-1.0.2.asar) — 未压缩的 asar 包体（手动放入插件目录用）
+- [`packages/clipboard-history-1.0.3.zpx`](packages/clipboard-history-1.0.3.zpx) — ZTools 官方安装包（asar + brotli 压缩，双击或导入即可安装）
+- [`packages/clipboard-history-1.0.3.asar`](packages/clipboard-history-1.0.3.asar) — 未压缩的 asar 包体（手动放入插件目录用）
+- 历史版本：[`packages/clipboard-history-1.0.2.zpx`](packages/clipboard-history-1.0.2.zpx) / [`packages/clipboard-history-1.0.2.asar`](packages/clipboard-history-1.0.2.asar)
 
-1. 下载并双击 `packages/clipboard-history-1.0.2.zpx`，或在 ZTools 插件页选择「导入本地插件」指向该文件。
+1. 下载并双击 `packages/clipboard-history-1.0.3.zpx`，或在 ZTools 插件页选择「导入本地插件」指向该文件。
 2. 在弹出的安装页点击「安装」。
 3. 打开插件：在 ZTools 输入 `剪切板` / `剪切板历史` / `clipboard` / `clipboard history`。
 4. 插件内过滤：进入插件后直接在 ZTools 主/子搜索框输入关键词。

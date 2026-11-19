@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "test": "node --test test/core.test.js",
-    "logo": "node scripts/make-logo.js"
+    "logo": "node scripts/make-logo.js",
+    "package": "node scripts/make-package.js"
   },
   "keywords": [
     "ztools",
