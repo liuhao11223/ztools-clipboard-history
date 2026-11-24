@@ -2,7 +2,7 @@
   "name": "clipboard-history",
   "title": "剪切板",
   "description": "本地剪切板历史与常用文字：自动记录复制内容，支持搜索、分组收藏与快速回填到剪贴板。",
-  "version": "1.0.4",
+  "version": "1.0.10",
   "platform": ["win32", "darwin", "linux"],
   "main": "index.html",
   "logo": "logo.png",

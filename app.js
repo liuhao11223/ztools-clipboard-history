@@ -107,22 +107,45 @@
   }
 
   function putDoc(db, doc, id) {
-    return Promise.resolve().then(function () { return db.put(doc); }).catch(function () {
-      return Promise.resolve(db.get ? db.get(id) : null).then(function (cur) {
-        var next = Object.assign({}, doc);
-        if (cur && cur._rev) next._rev = cur._rev;
-        return db.put(next);
-      }).catch(function () {});
+    var targetId = (doc && doc._id) || id;
+    return Promise.resolve().then(function () { return db.put(doc); }).then(function (res) {
+      if (res && res.error) {
+        return Promise.resolve(db.get ? db.get(targetId) : null).then(function (cur) {
+          if (cur && cur._rev) {
+            return db.put(Object.assign({}, doc, { _id: targetId, _rev: cur._rev }));
+          }
+          throw new Error(res.reason || res.error);
+        });
+      }
+      if (res && res.error) throw new Error(res.reason || res.error);
+      return res;
+    }).catch(function (e) {
+      return Promise.resolve(db.get ? db.get(targetId) : null).then(function (cur) {
+        if (cur && cur._rev) return db.put(Object.assign({}, doc, { _id: targetId, _rev: cur._rev }));
+        throw e;
+      });
     });
   }
 
   function removeDoc(db, doc, id) {
-    if (doc && doc._rev) {
-      return Promise.resolve().then(function () { return db.remove(doc); }).catch(function () {});
+    var targetId = (doc && doc._id) || id;
+    var rev = (doc && doc._rev) || null;
+    function doRemove(r) {
+      if (r) return db.remove(Object.assign({}, doc || {}, { _id: targetId, _rev: r }));
+      return db.remove(targetId);
     }
-    return Promise.resolve(db.get ? db.get(id) : null).then(function (cur) {
-      if (cur && cur._rev) return db.remove(cur);
-      return db.remove(id);
+    var p = rev ? Promise.resolve(rev) : Promise.resolve(db.get ? db.get(targetId) : null).then(function (cur) { return (cur && cur._rev) || null; });
+    return p.then(function (r) {
+      return doRemove(r);
+    }).then(function (res) {
+      if (res && res.error === "conflict") {
+        return Promise.resolve(db.get ? db.get(targetId) : null).then(function (cur) {
+          if (cur && cur._rev) return db.remove(Object.assign({}, doc || {}, { _id: targetId, _rev: cur._rev }));
+          throw new Error(res.reason || res.error);
+        });
+      }
+      if (res && res.error) throw new Error(res.reason || res.error);
+      return res;
     }).catch(function () {});
   }
 
@@ -152,7 +175,22 @@
         if (op.op === "remove") return removeDoc(db, op.doc, op.id);
         return putDoc(db, op.doc, op.id);
       });
-      return Promise.all(ops);
+      // 同步删除标记到云端，避免跨设备重新出现
+      var markerDoc = { _id: "snippet/deleted-markers", type: "clipboard-deleted-markers", markers: merged.state.settings.deleted || {}, source: "clipboard-history" };
+      ops.push(putDoc(db, markerDoc, "snippet/deleted-markers"));
+      return Promise.all(ops).then(function () {
+        // 拉取云端删除标记并合并
+        return db.get("snippet/deleted-markers").catch(function () { return null; });
+      }).then(function (m) {
+        if (m && m.markers) {
+          var combined = Object.assign({}, merged.state.settings.deleted || {}, m.markers);
+          if (JSON.stringify(combined) !== JSON.stringify(merged.state.settings.deleted || {})) {
+            merged.state.settings.deleted = combined;
+            state = merged.state;
+            if (services.save) services.save(state);
+          }
+        }
+      });
     }).catch(function (err) {
       try { console.warn("[clipboard-sync] sync failed", err); } catch (_) {}
     });
